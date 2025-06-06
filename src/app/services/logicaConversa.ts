@@ -166,7 +166,7 @@ Após esta frase inicial, continue com sua resposta normalmente.
 
 `;
   }
-
+  //comentario qualquer
   const informacoesProdutos = produtosRelevantes
     .map(
       (produto) => `
