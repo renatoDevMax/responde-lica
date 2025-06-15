@@ -7,6 +7,7 @@ import { findSimilarEmbeddings } from "./pinecone";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { Produto } from "../models/Produto";
 import connectDB from "../lib/mongodb";
+import { openai } from "../lib/openai-config";
 
 export interface ProdutoFinal {
   // Dados do MongoDB
@@ -27,8 +28,98 @@ export interface ProdutoFinal {
   descricaoPinecone: string;
 }
 
+interface Mensagem {
+  role: "user" | "assistant";
+  content: string;
+}
+
+async function otimizarMensagemParaBusca(
+  mensagem: string,
+  contexto: { mensagens: Mensagem[] }
+): Promise<string> {
+  try {
+    // Pega as últimas 4 mensagens para contexto (2 pares de pergunta/resposta)
+    const mensagensRecentes = contexto.mensagens.slice(-4);
+    const contextoFormatado = mensagensRecentes
+      .map(
+        (msg) =>
+          `${msg.role === "user" ? "Usuário" : "Assistente"}: ${msg.content}`
+      )
+      .join("\n");
+
+    const prompt = `Você é um especialista em produtos de limpeza. Sua tarefa é otimizar a mensagem do usuário para melhorar a busca de produtos no banco de dados.
+
+CONTEXTO DA CONVERSA:
+${contextoFormatado}
+
+MENSAGEM ATUAL DO USUÁRIO:
+"${mensagem}"
+
+INSTRUÇÕES:
+1. Analise o contexto da conversa para entender:
+   - O tipo de produto que o usuário está procurando
+   - O problema específico que precisa ser resolvido
+   - A intensidade do tratamento necessário (se aplicável)
+   - O estágio do tratamento (se aplicável)
+
+2. Se a mensagem atual for uma pergunta sobre disponibilidade/compra (ex: "você tem?", "tem algum?", "vende?"), mantenha o foco no último tipo de produto discutido
+
+3. Expanda a mensagem incluindo:
+   - Termos relacionados ao tipo específico de produto identificado no contexto
+   - Características específicas do problema que precisa ser resolvido
+   - Intensidade do tratamento necessário (quando aplicável)
+   - Estágio do tratamento (quando aplicável)
+
+4. Use termos técnicos do setor de limpeza quando apropriado
+
+5. Mantenha a mensagem concisa e direta
+
+Exemplos de otimização com contexto:
+
+Exemplo 1 - Produto de Piscina:
+Contexto:
+Usuário: "minha água está com um aspecto verde, retirei todas as folhas, preciso aplicar qual produto agora?"
+Assistente: [resposta sobre algicida de choque]
+Usuário: "você tem algum deles para vender?"
+Mensagem otimizada: "Algicida de choque para tratamento de água verde em piscinas, produto forte para eliminação de algas, tratamento inicial de choque"
+
+Exemplo 2 - Produto de Limpeza Geral:
+Contexto:
+Usuário: "preciso limpar o banco do carro que está com manchas"
+Assistente: [resposta sobre limpador específico para estofados]
+Usuário: "você tem algum deles para vender?"
+Mensagem otimizada: "Limpador específico para estofados automotivos, remove manchas e sujeiras, produto para limpeza profunda de tecidos"
+
+Exemplo 3 - Produto de Cozinha:
+Contexto:
+Usuário: "tenho gordura acumulada no fogão"
+Assistente: [resposta sobre desengordurante]
+Usuário: "você tem algum deles para vender?"
+Mensagem otimizada: "Desengordurante forte para fogão, remove gordura acumulada, produto específico para limpeza de cozinha"
+
+Responda APENAS com a mensagem otimizada, sem explicações adicionais.`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.3,
+      max_tokens: 150,
+    });
+
+    const mensagemOtimizada =
+      completion.choices[0].message.content?.trim() || mensagem;
+    console.log("Mensagem original:", mensagem);
+    console.log("Mensagem otimizada:", mensagemOtimizada);
+    return mensagemOtimizada;
+  } catch (error) {
+    console.error("Erro ao otimizar mensagem:", error);
+    return mensagem; // Retorna a mensagem original em caso de erro
+  }
+}
+
 export const buscarProdutosCompleto = async (
-  texto: string
+  texto: string,
+  contexto?: { mensagens: Mensagem[] }
 ): Promise<ProdutoFinal[]> => {
   try {
     console.log("Iniciando busca por:", texto);
@@ -37,11 +128,18 @@ export const buscarProdutosCompleto = async (
     await connectDB();
     console.log("Conexão com MongoDB estabelecida");
 
-    // 1. Gerar embedding do texto
-    const embedding = await gerarEmbedding(texto);
+    // 1. Otimizar a mensagem do usuário
+    const textoOtimizado = await otimizarMensagemParaBusca(
+      texto,
+      contexto || { mensagens: [] }
+    );
+    console.log("Mensagem otimizada para busca:", textoOtimizado);
+
+    // 2. Gerar embedding do texto otimizado
+    const embedding = await gerarEmbedding(textoOtimizado);
     console.log("Embedding gerado com sucesso");
 
-    // 2. Buscar IDs similares no Pinecone
+    // 3. Buscar IDs similares no Pinecone
     const produtosSimilares = await findSimilarEmbeddings(embedding);
     console.log("Produtos similares encontrados:", produtosSimilares.length);
 
@@ -50,7 +148,7 @@ export const buscarProdutosCompleto = async (
       return [];
     }
 
-    // 3. Buscar os produtos completos no Pinecone
+    // 4. Buscar os produtos completos no Pinecone
     const pinecone = new Pinecone({
       apiKey: process.env.PINECONE_API_KEY!,
     });
@@ -84,7 +182,7 @@ export const buscarProdutosCompleto = async (
 
     console.log("Produtos completos do Pinecone:", produtosCompletos.length);
 
-    // 4. Buscar os produtos no MongoDB e criar objetos finais
+    // 5. Buscar os produtos no MongoDB e criar objetos finais
     const produtosFinais = await Promise.all(
       produtosCompletos
         .filter(
@@ -130,7 +228,7 @@ export const buscarProdutosCompleto = async (
         })
     );
 
-    // 5. Exibir no terminal apenas os nomes dos produtos
+    // 6. Exibir no terminal apenas os nomes dos produtos
     console.log("\nProdutos ajustados com dados do Pinecone e MongoDB:");
     produtosFinais.forEach((produtoFinal, index) => {
       if (produtoFinal) {
@@ -139,7 +237,7 @@ export const buscarProdutosCompleto = async (
     });
     console.log(""); // Linha em branco para melhor visualização
 
-    // 6. Retornar apenas os produtos finais não nulos
+    // 7. Retornar apenas os produtos finais não nulos
     const produtosFiltrados = produtosFinais.filter(
       (produto): produto is ProdutoFinal => produto !== null
     );

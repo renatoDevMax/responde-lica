@@ -1,8 +1,8 @@
 export async function gerarEmbedding(text: string) {
   try {
     const baseUrl =
-      process.env.NEXT_PUBLIC_BASE_URL || "https://lica-responde.vercel.app";
-    const response = await fetch(`${baseUrl}/api/gerar-embedding`, {
+      process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000/";
+    const response = await fetch(`http://localhost:3000/api/gerar-embedding`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -111,7 +111,7 @@ export async function processarMensagemUsuario(
       );
       if (querNovoProduto) {
         console.log("Usuário quer um novo produto, buscando...");
-        produtosRelevantes = await buscarProdutosCompleto(mensagem);
+        produtosRelevantes = await buscarProdutosCompleto(mensagem, contexto);
       } else {
         console.log("Usuário ainda está interessado no produto atual");
         produtosRelevantes = [produtoAtual];
@@ -120,7 +120,7 @@ export async function processarMensagemUsuario(
       // Se não tiver produto atual, verifica se deve buscar produtos
       if (await deveBuscarProdutos(mensagem)) {
         console.log("Buscando produtos para nova consulta...");
-        produtosRelevantes = await buscarProdutosCompleto(mensagem);
+        produtosRelevantes = await buscarProdutosCompleto(mensagem, contexto);
       }
     }
 

@@ -66,6 +66,18 @@ export async function findSimilarEmbeddings(embedding: number[]) {
       "matches"
     );
 
+    // Log detalhado de cada match
+    queryResponse.matches.forEach((match, index) => {
+      console.log(`\nMatch ${index + 1}:`);
+      console.log(`ID do Produto: ${match.id}`);
+      console.log(
+        `Similaridade: ${match.score ? (match.score * 100).toFixed(2) : "N/A"}%`
+      );
+      if (match.metadata) {
+        console.log(`Nome do Produto: ${match.metadata.nome}`);
+      }
+    });
+
     const matches = queryResponse.matches.map((match) => ({
       id: match.id,
       similaridade: match.score,

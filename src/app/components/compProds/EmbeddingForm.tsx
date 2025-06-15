@@ -90,7 +90,7 @@ const EmbeddingForm: React.FC<EmbeddingFormProps> = ({
           <div className="text-red-500 text-center text-sm">{error}</div>
         )}
 
-        <div className="h-[300px] border border-gray-300 rounded-md p-4 bg-[#EDF3F9] overflow-auto">
+        <div className="h-[100px] border border-gray-300 rounded-md p-4 bg-[#EDF3F9] overflow-auto">
           {embedding.length > 0 ? (
             <pre className="text-sm text-[#183263] whitespace-pre-wrap break-all">
               {JSON.stringify(embedding, null, 2)}
