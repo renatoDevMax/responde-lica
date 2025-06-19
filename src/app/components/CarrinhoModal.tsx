@@ -130,7 +130,7 @@ export default function CarrinhoModal({
                   <div className="flex items-center justify-between border-t pt-3">
                     <div className="flex items-center gap-3">
                       <span className="text-gray-600">Quantidade:</span>
-                      <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-2">
+                      <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-2 text-[#183263]">
                         <button
                           onClick={() =>
                             atualizarQuantidade(
