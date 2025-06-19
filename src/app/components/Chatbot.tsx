@@ -272,6 +272,10 @@ export default function Chatbot() {
                   />
                 </div>
                 <div className="flex-1">
+                  <div className="mb-2 text-gray-700">
+                    Estou pensando em alguma solução pra você, dexe-me ver por
+                    aqui
+                  </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-[#7EC13D] rounded-full animate-bounce" />
                     <div className="w-2 h-2 bg-[#7EC13D] rounded-full animate-bounce delay-100" />
@@ -302,6 +306,21 @@ export default function Chatbot() {
               const target = e.target as HTMLTextAreaElement;
               target.style.height = "auto";
               target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
+            }}
+            onKeyDown={(e) => {
+              // Verifica se é um dispositivo móvel
+              const isMobile =
+                /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+                  navigator.userAgent
+                );
+
+              // Se não for mobile e pressionar Enter sem Shift
+              if (!isMobile && e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault(); // Previne a quebra de linha
+                if (!isLoading && input.trim()) {
+                  handleSubmit(e as unknown as React.FormEvent);
+                }
+              }
             }}
           />
           <button

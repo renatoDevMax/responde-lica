@@ -32,11 +32,11 @@ export default function ProdutoCard({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg overflow-hidden w-64">
+    <div className="bg-white rounded-lg shadow-lg overflow-hidden w-64 md:w-80 lg:w-96">
       <img
         src={produto.imagem}
         alt={produto.nome}
-        className="w-full h-48 object-cover"
+        className="w-full h-48 object-contain bg-gray-50"
       />
 
       <div className="p-4">

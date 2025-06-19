@@ -109,7 +109,7 @@ export default function CarrinhoModal({
                     <img
                       src={produto.imagem}
                       alt={produto.nome}
-                      className="w-24 h-24 object-cover rounded-lg shadow-sm"
+                      className="w-24 h-24 object-contain bg-gray-50 rounded-lg shadow-sm"
                     />
                     <div className="flex-1">
                       <h3 className="font-semibold text-[#183263] text-lg mb-1">

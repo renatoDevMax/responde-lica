@@ -56,7 +56,7 @@ export async function findSimilarEmbeddings(embedding: number[]) {
     console.log("Buscando produtos similares no Pinecone...");
     const queryResponse = await index.query({
       vector: embedding,
-      topK: 5,
+      topK: 8,
       includeMetadata: true,
     });
 
